@@ -1,6 +1,7 @@
 package ui;
 
 import java.awt.*;
+import javax.swing.JPanel;
 import entities.Player;
 import entities.Ball;
 import entities.Team;
@@ -9,10 +10,9 @@ import world.PlaySpace;
 import world.Environment;
 import world.GameMap;
 
-public class SimulationPanel extends Panel {
+public class SimulationPanel extends JPanel {
 
     private GameMap map;
-
     private Team redTeam;
     private Team blueTeam;
     private Ball ball;
@@ -37,7 +37,6 @@ public class SimulationPanel extends Panel {
             int offsetY) {
 
         int playerSize = 24;
-
         g.setColor(colour);
 
         for (Player player : players) {
@@ -49,7 +48,9 @@ public class SimulationPanel extends Panel {
         }
     }
 
-    public void paint(Graphics g) {
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g); // This single line activates double buffering
 
         PlaySpace playSpace = map.getPlaySpace();
         Environment environment = map.getEnvironment();
@@ -58,39 +59,28 @@ public class SimulationPanel extends Panel {
         int marginY = (int) map.getMarginY();
 
         g.setColor(environment.getSurroundingTerrain().getDisplayColor());
-        g.fillRect(
-                0,
-                0,
-                getWidth(),
-                getHeight());
+        g.fillRect(0, 0, getWidth(), getHeight());
 
         g.setColor(environment.getPlayingTerrain().getDisplayColor());
-        g.fillRect(
-                marginX,
-                marginY,
-                (int) playSpace.getWidth(),
-                (int) playSpace.getHeight());
+        g.fillRect(marginX, marginY, (int) playSpace.getWidth(), (int) playSpace.getHeight());
 
         g.setColor(Color.WHITE);
-
-        // int width = getWidth();
-        // int height = getHeight();
 
         Goal leftGoal = playSpace.getLeftGoal();
         Goal rightGoal = playSpace.getRightGoal();
 
-        // DRAWS THE FIELD'S CENTRE LINE
-        // needs to cast measurements as "(int)" for compatibility
-        // g.drawLine(width / 2, 0, width / 2, height);
-        g.drawLine(
-                marginX + (int) playSpace.getWidth() / 2,
-                marginY + 0,
-                marginX + (int) playSpace.getWidth() / 2,
-                marginY + (int) playSpace.getHeight());
+        int centerX = marginX + (int) playSpace.getWidth() / 2;
+        int centerY = marginY + (int) playSpace.getHeight() / 2;
 
-        // DRAWS THE GOALS
-        // g.drawRect(0, 175, 150, 300);
-        // g.drawRect(width - 150, 175, 150, 300);
+        g.drawLine(centerX, marginY, centerX, marginY + (int) playSpace.getHeight());
+
+        int circleSize = 150;
+        g.drawOval(
+                centerX - circleSize / 2, 
+                centerY - circleSize / 2, 
+                circleSize, 
+                circleSize
+        );
 
         g.drawRect(
                 marginX + (int) leftGoal.getX(),
@@ -104,27 +94,10 @@ public class SimulationPanel extends Panel {
                 (int) rightGoal.getWidth(),
                 (int) rightGoal.getHeight());
 
-        // g.setColor(Color.RED);
+        drawPlayers(g, redTeam.getPlayers(), redTeam.getColor(), marginX, marginY);
+        drawPlayers(g, blueTeam.getPlayers(), blueTeam.getColor(), marginX, marginY);
 
-        drawPlayers(
-            g, 
-            redTeam.getPlayers(), 
-            redTeam.getColor(), 
-            marginX, 
-            marginY
-        );
-
-        drawPlayers(
-            g, 
-            blueTeam.getPlayers(), 
-            blueTeam.getColor(), 
-            marginX, 
-            marginY
-        );
-
-        // Ball Draw
         int ballSize = 12;
-
         g.setColor(Color.WHITE);
         g.fillOval(
                 marginX + (int) ball.getXPos() - ballSize / 2,

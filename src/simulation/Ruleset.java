@@ -95,6 +95,7 @@ public class Ruleset {
     public void setPenaltiesEnabled(boolean penaltiesEnabled) {
         this.penaltiesEnabled = penaltiesEnabled;
     }
+  
 
     public String toString() {
         return "Ruleset{" +

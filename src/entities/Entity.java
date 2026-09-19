@@ -18,4 +18,8 @@ public class Entity {
         return yPos;
     }
 
+   public void moveTo(double x, double y) {
+        this.xPos = x;
+        this.yPos = y;
+    }
 }

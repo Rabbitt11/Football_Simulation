@@ -9,6 +9,7 @@ import javax.swing.Timer;
 import entities.Ball;
 import entities.Coach;
 import entities.Player;
+import entities.Tactics;
 import entities.Team;
 import entities.TeamComp;
 import entities.TeamLoader;
@@ -34,10 +35,14 @@ public class Main {
         GameMap map = new GameMap(MapPreset.DEFAULT);
         PlaySpace playSpace = map.getPlaySpace();
 
-        Player[] redPlayers = loadTeamOrDefault("teams/presets/average.txt", playSpace, true);
-        Player[] bluePlayers = loadTeamOrDefault("teams/presets/average.txt", playSpace, false);
-        Team redTeam = new Team("Red Team", Color.RED, redPlayers);
-        Team blueTeam = new Team("Blue Team", Color.BLUE, bluePlayers);
+               // Change these two lines to try different match-ups.
+        String redPreset = "teams/presets/aggressive.txt";
+        String bluePreset = "teams/presets/defensive.txt";
+
+        Player[] redPlayers = loadTeamOrDefault(redPreset, playSpace, true);
+        Player[] bluePlayers = loadTeamOrDefault(bluePreset, playSpace, false);
+        Team redTeam = new Team("Red Team", Color.RED, redPlayers, loadTacticsOrDefault(redPreset));
+        Team blueTeam = new Team("Blue Team", Color.BLUE, bluePlayers, loadTacticsOrDefault(bluePreset));
 
         Ball ball = new Ball(
                 playSpace.getLength() / 2,
@@ -89,10 +94,12 @@ public class Main {
             frame.pack();
             frame.setVisible(true);
 
+                        // Start first: the coaches set up their preset tactics on kick-off...
+            match.start();
+
+            // ...then the demo gives the ball carrier and challenger their special behaviours.
             SimulationSetup.setupAttackingDemo(ball, redPlayers, bluePlayers, map);
             blueTeam.assignChallenger(ball, map, 200.0, playSpace.getWidth() / 2);
-
-            match.start();
 
             Timer timer = new Timer(1000, e -> {
                 Player attacker;
@@ -172,6 +179,16 @@ public class Main {
             movementTimer.start();
         });
     }
+    private static Tactics loadTacticsOrDefault(String filename) {
+        try {
+            return TeamLoader.loadTactics(filename);
+        } catch (IOException | IllegalArgumentException e) {
+            System.out.println("Could not load tactics from " + filename + ": " + e.getMessage());
+            System.out.println("Using balanced tactics.");
+            return Tactics.balanced();
+        }
+    }
+
 
     private static Player[] loadTeamOrDefault(
             String filename,

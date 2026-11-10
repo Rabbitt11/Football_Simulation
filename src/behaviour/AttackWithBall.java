@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import entities.Ball;
 import entities.Player;
+import entities.Tactics;
 import world.GameMap;
 import world.Terrain;
 import world.Goal;
@@ -57,7 +58,10 @@ public class AttackWithBall implements MovementBehaviour {
                 goalX - ball.getXPos(),
                 goalY - ball.getYPos());
 
-        if (distanceToGoal <= 1800.0 && player.canTouch(ball)) {
+               // How far out we shoot depends on the team's tactics (preset file).
+        Tactics tactics = player.getTeam().getTactics();
+
+        if (distanceToGoal <= tactics.getShootingRangeCm() && player.canTouch(ball)) {
             boolean shot = player.tryKickTowards(
                     goalX,
                     goalY,
@@ -70,7 +74,7 @@ public class AttackWithBall implements MovementBehaviour {
             }
         }
 
-        if (player.canTouch(ball) && player.isUnderPressure(500.0)) {
+        if (player.canTouch(ball) && player.isUnderPressure(tactics.getPassUnderPressureCm())) {
             Optional<Player> choice = player.choosePassReceiver(
                     targetX,
                     targetY,

@@ -69,7 +69,8 @@ public class Scoreboard implements MatchListener {
         g.setColor(Color.WHITE);
         int y = panelHeight - 15 - 18 * (coaches.length - 1);
         for (Coach coach : coaches) {
-            g.drawString(coach.getTeam().getName() + " coach: " + coach.getMentality(), 15, y);
+            g.drawString(coach.getTeam().getName() + " (" + coach.getTeam().getTactics()
+                    + ") coach: " + coach.getMentality(), 15, y);
             y += 18;
         }
 

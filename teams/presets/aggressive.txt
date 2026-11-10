@@ -4,3 +4,7 @@ Defender,3
 Midfielder,4
 Midfielder,5
 Attacker,6
+formationShift=0.10
+pressing=0.15
+shootingRange=2400
+passUnderPressure=300

@@ -16,10 +16,17 @@ public class Team {
     private Player nominatedChallenger;
     private MovementBehaviour nominatedChallengeBehaviour;
 
+        private final Tactics tactics;
+
     public Team(String name, Color color, Player[] players) {
+        this(name, color, players, Tactics.balanced());
+    }
+
+    public Team(String name, Color color, Player[] players, Tactics tactics) {
         this.name = name;
         this.color = color;
         this.players = players;
+        this.tactics = tactics;
     }
 
     public Optional<Player> chooseChallenger(Ball ball) {
@@ -73,6 +80,9 @@ public class Team {
 
     public Player[] getPlayers() {
         return players;
+    }
+     public Tactics getTactics() {
+        return tactics;
     }
 
 }

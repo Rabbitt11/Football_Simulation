@@ -64,7 +64,8 @@ public class Coach extends Entity implements MatchListener {
         if (next != mentality) {
             mentality = next;
             applyMentality();
-            System.out.println(team.getName() + " coach switches to " + mentality);
+            // No printing here: in batch mode hundreds of coaches run at once,
+            // and the scoreboard already shows each coach's mentality.
         }
     }
 

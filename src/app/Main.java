@@ -3,11 +3,11 @@ package app;
 import java.awt.*;
 
 import java.io.IOException;
+import java.util.Random;
 import javax.swing.JFrame;
 import javax.swing.Timer;
 
 import entities.Ball;
-import entities.Coach;
 import entities.Player;
 import entities.Tactics;
 import entities.Team;
@@ -15,6 +15,7 @@ import entities.TeamComp;
 import entities.TeamLoader;
 
 import simulation.Match;
+import simulation.MatchEngine;
 import simulation.Ruleset;
 
 import ui.Scoreboard;
@@ -24,8 +25,14 @@ import ui.StatsBoard;
 import world.GameMap;
 import world.MapPreset;
 import world.PlaySpace;
-import world.Terrain;
 
+/*
+ * Main - ONE match you can watch.
+ *
+ * All the game rules live in MatchEngine. Main only builds the teams, opens the
+ * window, and calls engine.tick() 50 times a second. BatchMain uses the very
+ * same engine with no window to play hundreds of matches.
+ */
 public class Main {
 
     // A short match so the showcase can see both halves: 2.5 minutes each.
@@ -50,32 +57,20 @@ public class Main {
                 playSpace.getWidth() / 2,
                 0.0);
 
-        for (Player player : redPlayers) {
-            player.setMatchDetails(ball, redTeam, blueTeam);
-            player.initialiseDefaultBehaviour(playSpace, true);
-        }
-
-        for (Player player : bluePlayers) {
-            player.setMatchDetails(ball, blueTeam, redTeam);
-            player.initialiseDefaultBehaviour(playSpace, false);
-        }
-
-        // ---------- Observer pattern: Match is the subject ----------
         Ruleset shortMatch = new Ruleset(
                 HALF_LENGTH_SECONDS, HALF_LENGTH_SECONDS, 60, 6, false, false);
-        Match match = new Match(redTeam, blueTeam, ball, shortMatch);
 
-        // Red defends the left goal, so red attacks right.
-        Coach redCoach = new Coach(redTeam, ball, playSpace.getLength(), true);
-        Coach blueCoach = new Coach(blueTeam, ball, playSpace.getLength(), false);
-        Scoreboard scoreboard = new Scoreboard(match.getGameState(), redCoach, blueCoach);
+        // new Random() with no seed: a different match every time you run it.
+        MatchEngine engine = new MatchEngine(map, redTeam, blueTeam, ball, shortMatch, new Random());
+        Match match = engine.getMatch();
 
+        // ---------- Observers (the coaches are already registered by the engine) ----------
+        Scoreboard scoreboard = new Scoreboard(
+                match.getGameState(), engine.getRedCoach(), engine.getBlueCoach());
         StatsBoard statsBoard = new StatsBoard();
 
         match.addListener(scoreboard);
         match.addListener(statsBoard);
-        match.addListener(redCoach);
-        match.addListener(blueCoach);
         // A listener can also be a lambda, because MatchListener is a functional interface.
         match.addListener((goal, state) -> System.out.println("GOAL  " + goal + "   Score: " + state.getScore()));
 
@@ -84,11 +79,7 @@ public class Main {
             JFrame frame = new JFrame("Football Simulation");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-            SimulationPanel panel = new SimulationPanel(
-                    map,
-                    redTeam,
-                    blueTeam,
-                    ball);
+            SimulationPanel panel = new SimulationPanel(map, redTeam, blueTeam, ball);
             panel.addOverlay(scoreboard);
             panel.addOverlay(statsBoard);
 
@@ -99,89 +90,16 @@ public class Main {
             frame.pack();
             frame.setVisible(true);
 
-            // Start first: the coaches set up their preset tactics on kick-off...
-            match.start();
+            engine.start();
 
-            // ...then the demo gives the ball carrier and challenger their special behaviours.
-            SimulationSetup.setupAttackingDemo(ball, redPlayers, bluePlayers, map);
-            blueTeam.assignChallenger(ball, map, 200.0, playSpace.getWidth() / 2);
-
-            Timer timer = new Timer(1000, e -> {
-                Player attacker;
-                if (Math.random() < 0.5) {
-                    attacker = redPlayers[5];
-                } else {
-                    attacker = bluePlayers[5];
-                }
-                ball.moveTo(attacker.getXPos(), attacker.getYPos(), 0.0);
-            });
-            timer.setRepeats(false);
-            timer.start();
-
-            Timer passingTimer = new Timer(2000, e -> {
-                Player ballHolder = null;
-                for (Player player : redPlayers) {
-                    if (player.hasPossession(ball)) {
-                        ballHolder = player;
-                        break;
-                    }
-                }
-                if (ballHolder != null) {
-                    ballHolder.pass();
-                }
-            });
-            passingTimer.start();
-
-            // The match clock: one tick per real second.
-            Timer clockTimer = new Timer(1000, e -> match.update(1));
-            clockTimer.start();
-
-            Timer movementTimer = new Timer(20, e -> {
-                // Freeze the pitch once the final whistle has gone.
-                if (!match.getGameState().isRunning()) {
-                    panel.repaint();
-                    return;
-                }
-
-                for (Player player : redPlayers) {
-                    player.update(0.02);
-                }
-
-                for (Player player : bluePlayers) {
-                    player.update(0.02);
-                }
-
-                Terrain surface;
-
-                if (playSpace.contains(ball.getXPos(), ball.getYPos())) {
-                    surface = map.getEnvironment().getPlayingTerrain();
-                } else {
-                    surface = map.getEnvironment().getSurroundingTerrain();
-                }
-
-                // Update the ball's position every 20 milliseconds (0.02 seconds)
-                ball.update(0.02, surface.getRollingDeceleration());
-
-                boolean inLeftGoal = SimulationSetup.isBallInGoal(ball, playSpace.getLeftGoal());
-                boolean inRightGoal = SimulationSetup.isBallInGoal(ball, playSpace.getRightGoal());
-
-                if (inLeftGoal || inRightGoal) {
-                    // Red attacks right, so a ball in the right goal is a red goal.
-                    Team scoringTeam = inRightGoal ? redTeam : blueTeam;
-                    Player scorer = ball.getLastToucher();
-                    boolean ownGoal = scorer != null && scorer.getTeam() != scoringTeam;
-
-                    // Notify every observer (scoreboard, coaches, console)...
-                    match.recordGoal(scorer, scoringTeam, null, ownGoal);
-
-                    // ...then restart. Players pick up any new tactics from their coach here.
-                    blueTeam.releaseChallenger();
-                    SimulationSetup.resetDemo(ball, redPlayers, bluePlayers, map);
-                    blueTeam.assignChallenger(ball, map, 200.0, playSpace.getWidth() / 2);
-                }
+            // 50 ticks per second of real time. After the final whistle tick() does nothing,
+            // but we keep repainting so the full-time banner and stats stay on screen.
+            int tickMillis = (int) Math.round(MatchEngine.TICK_SECONDS * 1000);
+            Timer gameLoop = new Timer(tickMillis, e -> {
+                engine.tick(MatchEngine.TICK_SECONDS);
                 panel.repaint();
             });
-            movementTimer.start();
+            gameLoop.start();
         });
     }
 

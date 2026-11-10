@@ -8,9 +8,9 @@ import entities.Attacker;
 import entities.Ball;
 import entities.Coach;
 import entities.Player;
+import entities.Referee;
 import entities.Team;
 import world.GameMap;
-import world.Goal;
 import world.PlaySpace;
 import world.Terrain;
 
@@ -29,8 +29,6 @@ public class MatchEngine {
 
     public static final double TICK_SECONDS = 0.02;
 
-    // How far the ball may roll past a line before the referee restarts play (cm).
-    private static final double OUT_OF_PLAY_MARGIN_CM = 100.0;
     // Random nudge to the kick-off spot, so matches with the same teams still differ (cm).
     private static final double KICK_OFF_JITTER_CM = 400.0;
 
@@ -42,6 +40,7 @@ public class MatchEngine {
     private final Match match;
     private final Coach redCoach;
     private final Coach blueCoach;
+    private final Referee referee;
     private final Random random;
 
     private double clockAccumulator = 0.0;
@@ -56,6 +55,7 @@ public class MatchEngine {
         this.blueTeam = blueTeam;
         this.ball = ball;
         this.random = random;
+        this.referee = new Referee(playSpace);
 
         // Red defends the left goal, blue defends the right.
         for (Player player : redTeam.getPlayers()) {
@@ -121,29 +121,38 @@ public class MatchEngine {
                 : map.getEnvironment().getSurroundingTerrain();
         ball.update(deltaSeconds, surface.getRollingDeceleration());
 
-        // 4. Referee decisions.
-        boolean inLeftGoal = isBallInGoal(playSpace.getLeftGoal());
-        boolean inRightGoal = isBallInGoal(playSpace.getRightGoal());
-
-        if (inLeftGoal || inRightGoal) {
-            // Red attacks right, so a ball in the right goal is a red goal.
-            Team scoringTeam = inRightGoal ? redTeam : blueTeam;
-            Player scorer = ball.getLastToucher();
-            boolean ownGoal = scorer != null && scorer.getTeam() != scoringTeam;
-
-            match.recordGoal(scorer, scoringTeam, null, ownGoal);
-            kickOff(otherTeam(scoringTeam)); // the team that conceded kicks off
-            return;
+        // 4. The referee reviews the ball; the engine acts on the decision.
+        switch (referee.review(ball)) {
+            case GOAL_IN_RIGHT_GOAL:
+                goalFor(redTeam); // red attacks right, so this is a red goal
+                break;
+            case GOAL_IN_LEFT_GOAL:
+                goalFor(blueTeam);
+                break;
+            case OUT_OF_PLAY:
+                restartAfterOutOfPlay();
+                break;
+            case PLAY_ON:
+            default:
+                break;
         }
+    }
 
-        if (isBallOutOfPlay()) {
-            // Simplified rule: whoever did NOT touch it last restarts with the ball.
-            Player lastToucher = ball.getLastToucher();
-            Team restartingTeam = lastToucher == null
-                    ? (random.nextBoolean() ? redTeam : blueTeam)
-                    : otherTeam(lastToucher.getTeam());
-            kickOff(restartingTeam);
-        }
+    private void goalFor(Team scoringTeam) {
+        Player scorer = ball.getLastToucher();
+        boolean ownGoal = scorer != null && scorer.getTeam() != scoringTeam;
+
+        match.recordGoal(scorer, scoringTeam, null, ownGoal);
+        kickOff(otherTeam(scoringTeam)); // the team that conceded kicks off
+    }
+
+    // Simplified rule: whoever did NOT touch it last restarts with the ball.
+    private void restartAfterOutOfPlay() {
+        Player lastToucher = ball.getLastToucher();
+        Team restartingTeam = lastToucher == null
+                ? (random.nextBoolean() ? redTeam : blueTeam)
+                : otherTeam(lastToucher.getTeam());
+        kickOff(restartingTeam);
     }
 
     // Reset everyone and give the ball to `kickingTeam`.
@@ -189,26 +198,6 @@ public class MatchEngine {
 
     private Team otherTeam(Team team) {
         return team == redTeam ? blueTeam : redTeam;
-    }
-
-    private boolean isBallInGoal(Goal goal) {
-        double radius = ball.getRadiusCm();
-
-        return ball.getXPos() - radius >= goal.getX()
-                && ball.getXPos() + radius <= goal.getX() + goal.getDepth()
-                && ball.getYPos() - radius >= goal.getY()
-                && ball.getYPos() + radius <= goal.getY() + goal.getWidth()
-                && ball.getZPos() + radius <= goal.getHeight();
-    }
-
-    private boolean isBallOutOfPlay() {
-        double x = ball.getXPos();
-        double y = ball.getYPos();
-
-        return x < -OUT_OF_PLAY_MARGIN_CM
-                || x > playSpace.getLength() + OUT_OF_PLAY_MARGIN_CM
-                || y < -OUT_OF_PLAY_MARGIN_CM
-                || y > playSpace.getWidth() + OUT_OF_PLAY_MARGIN_CM;
     }
 
     // Snapshot of how the match ended. Uses the custom collector from step 4.

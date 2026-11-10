@@ -20,24 +20,6 @@ public class Goalkeeper extends Player {
     }
 
     @Override
-    public void pass() {
-        if (!hasPossession(ball)) {
-            return;
-        }
-
-        int index = Math.random() < 0.5 ? 1 : 2;
-        Player receiver = team.getPlayers()[index];
-
-        // ball.moveTo(receiver.getXPos(), receiver.getYPos(), receiver.getZPos());
-
-        ball.kickTowards(
-                receiver.getXPos(),
-                receiver.getYPos(),
-                1000.0,
-                this);
-    }
-
-    @Override
     public void configureDefaultBehaviour(
             PlaySpace playSpace, boolean defendingLeft) {
 

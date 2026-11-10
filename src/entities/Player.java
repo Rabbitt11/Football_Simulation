@@ -22,6 +22,7 @@ public abstract class Player extends Entity {
     private double reachRadiusCm = 100.0; // value chosen as a reasonable approximation of the average human arm reach
                                           // (cm)
     private final Movement movement;
+    private final PlayerStats stats = new PlayerStats();
 
     private MovementBehaviour movementBehaviour;
     private MovementBehaviour defaultMovementBehaviour;
@@ -87,10 +88,21 @@ public abstract class Player extends Entity {
         touchCooldownRemaining = Math.max(0.0, touchCooldownRemaining - deltaSeconds);
         passCooldownRemaining = Math.max(0.0, passCooldownRemaining - deltaSeconds);
 
+        double startX = xPos;
+        double startY = yPos;
+
         if (movementBehaviour != null) {
             movementBehaviour.update(this, deltaSeconds);
         } else {
             updateMovement(0.0, 0.0, 0.0, deltaSeconds);
+        }
+
+        // Stats: how far we ran this tick, and whether our team "has" the ball.
+        // Possession = this player was the last one to touch the ball.
+        stats.addDistance(Math.hypot(xPos - startX, yPos - startY));
+
+        if (ball != null && ball.getLastToucher() == this) {
+            stats.addPossession(deltaSeconds);
         }
     }
 
@@ -234,6 +246,7 @@ public abstract class Player extends Entity {
 
         if (passed) {
             passCooldownRemaining = passCooldownSeconds;
+            stats.recordPass();
         }
 
         return passed;
@@ -363,7 +376,11 @@ public abstract class Player extends Entity {
     public Team getOpposingTeam() {
         return opposingTeam;
     }
-    
+
+    public PlayerStats getStats() {
+        return stats;
+    }
+
     public Team getTeam() {
         return team;
     }

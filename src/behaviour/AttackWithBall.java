@@ -58,7 +58,7 @@ public class AttackWithBall implements MovementBehaviour {
                 goalX - ball.getXPos(),
                 goalY - ball.getYPos());
 
-               // How far out we shoot depends on the team's tactics (preset file).
+        // How far out we shoot depends on the team's tactics (preset file).
         Tactics tactics = player.getTeam().getTactics();
 
         if (distanceToGoal <= tactics.getShootingRangeCm() && player.canTouch(ball)) {
@@ -68,6 +68,7 @@ public class AttackWithBall implements MovementBehaviour {
                     1500.0);
 
             if (shot) {
+                player.getStats().recordShot();
                 player.restoreDefaultBehaviour();
                 player.updateMovement(0.0, 0.0, 0.0, deltaSeconds);
                 return;

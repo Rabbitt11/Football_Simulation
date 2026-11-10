@@ -1,6 +1,8 @@
 package ui;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JPanel;
 import entities.Player;
 import entities.Ball;
@@ -15,7 +17,8 @@ public class SimulationPanel extends JPanel {
     private Team redTeam;
     private Team blueTeam;
     private Ball ball;
-    private Scoreboard scoreboard; // optional overlay
+    // Things drawn on top of the pitch (scoreboard, stats...), in the order added.
+    private final List<Overlay> overlays = new ArrayList<>();
 
     public SimulationPanel(
             GameMap map,
@@ -28,8 +31,8 @@ public class SimulationPanel extends JPanel {
         this.ball = ball;
     }
 
-        public void setScoreboard(Scoreboard scoreboard) {
-        this.scoreboard = scoreboard;
+    public void addOverlay(Overlay overlay) {
+        overlays.add(overlay);
     }
 
     private void drawPlayers(
@@ -106,12 +109,10 @@ public class SimulationPanel extends JPanel {
         int ballX = marginX + (int) Math.round(ball.getXPos() * scale) - (ballSize / 2);
         int ballY = marginY + (int) Math.round(ball.getYPos() * scale) - (ballSize / 2);
         g.fillOval(ballX, ballY, ballSize, ballSize);
-        
-        // Draw Scoreboard last so it sits on top of everything
-        if (scoreboard != null) {
-            scoreboard.draw(g, getWidth(), getHeight());
+
+        // Draw overlays last so they sit on top of everything
+        for (Overlay overlay : overlays) {
+            overlay.draw(g, getWidth(), getHeight());
         }
     }
-    
-      
 }

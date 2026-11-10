@@ -20,21 +20,6 @@ public class Midfielder extends Player {
     }
 
     @Override
-    public void pass() {
-        if (!hasPossession(ball)) {
-            return;
-        }
-
-        Player receiver = team.getPlayers()[5];
-
-        ball.kickTowards(
-                receiver.getXPos(),
-                receiver.getYPos(),
-                1000.0,
-                this);
-    }
-
-    @Override
     public void configureDefaultBehaviour(
         PlaySpace playSpace, boolean defendingLeft) {
         setMovementBehaviour(
@@ -44,9 +29,10 @@ public class Midfielder extends Player {
                         spawnY,
                         getBaseBallInfluence()));
     }
-        @Override
+
+    @Override
     public double getBaseBallInfluence() {
-        return 0.30;   // Midfielder: 0.30   Attacker: 0.40
+        return 0.30;
     }
 
 }

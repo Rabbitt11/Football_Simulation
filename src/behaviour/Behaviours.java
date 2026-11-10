@@ -1,15 +1,15 @@
 package behaviour;
 
 import entities.Ball;
-import entities.Entity;
 import world.Goal;
 
 /*
  * Behaviours - a small "menu" of simple movement behaviours, built with lambdas.
  *
- * Before: each of these was its own class (MoveTowardPosition, FollowEntity,
- * GuardGoal, HoldFormation). Each class was ~20 lines of boilerplate:
- * fields, a constructor, and ONE method that did the real work.
+ * Before: each of these was its own class (GuardGoal, HoldFormation). Each
+ * class was ~20 lines of boilerplate: fields, a constructor, and ONE method
+ * that did the real work. (Two more single-method classes, MoveTowardPosition
+ * and FollowEntity, were never used by the game, so they were removed.)
  *
  * Because MovementBehaviour has exactly one abstract method, it is a
  * functional interface. That means a lambda can BE a MovementBehaviour.
@@ -17,7 +17,7 @@ import world.Goal;
  * now captured by the lambda from the method's parameters.
  *
  * Kept as classes on purpose: AttackWithBall, ChallengeForBall,
- * DribbleTowardsPosition, PassToPlayer and ReceiveBall. Those behaviours
+ * DribbleTowardsPosition and ReceiveBall. Those behaviours
  * remember things between ticks (e.g. "have I passed yet?"), and a lambda
  * cannot hold mutable fields of its own. A class is the better tool there.
  */
@@ -25,19 +25,6 @@ public final class Behaviours {
 
     private Behaviours() {
         // utility class - never instantiated
-    }
-
-    // Move straight towards a fixed point on the field.
-    public static MovementBehaviour moveTo(double targetX, double targetY) {
-        return (player, deltaSeconds) -> player.moveTowards(targetX, targetY, deltaSeconds);
-    }
-
-    // Chase any entity - the ball, another player, the referee...
-    public static MovementBehaviour follow(Entity target) {
-        return (player, deltaSeconds) -> player.moveTowards(
-                target.getXPos(),
-                target.getYPos(),
-                deltaSeconds);
     }
 
     // Stand on the goal line at positionX and slide sideways to track the ball,

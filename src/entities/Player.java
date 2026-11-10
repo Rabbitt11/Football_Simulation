@@ -328,22 +328,6 @@ public abstract class Player extends Entity {
         return Math.sqrt(2.0 * rollingDeceleration * distanceCm);
     }
 
-    public boolean canReceive(Ball ball) {
-        double horizontalDistance = Math.hypot(ball.getXPos() - xPos, ball.getYPos() - yPos);
-
-        return horizontalDistance <= bodyRadiusCm + ball.getRadiusCm()
-                && Math.abs(ball.getZPos() - zPos) <= ball.getRadiusCm();
-    }
-
-    public boolean hasPossession(Ball ball) {
-        return !ball.isMoving()
-                && xPos == ball.getXPos()
-                && yPos == ball.getYPos()
-                && zPos == ball.getZPos();
-    }
-
-    public abstract void pass();
-
     // Spawn point
     public void resetPosition() {
         movement.stop(); // deletes any momentum :)

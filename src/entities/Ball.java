@@ -78,12 +78,6 @@ public class Ball extends Entity {
         velocityZ = 0;
     }
 
-    void move(double x, double y, double z) {
-        xPos += x;
-        yPos += y;
-        zPos += z;
-    }
-
     public void moveTo(double x, double y, double z) {
         xPos = x;
         yPos = y;

@@ -1,81 +1,111 @@
-## Hello Gamers ##
+# Football Simulation
 
-This is in Anticipation of Week 13 Review.
+Our COMP2000 project. It's a 6-a-side football match in Java. Each player decides
+for itself where to move, the coaches change tactics depending on the score, and
+there's a batch mode that plays a few hundred matches to see which tactic wins most.
 
-I will outline any stuff I make below; I hope it's clear and easy to understand!
+Only standard Java is used, no libraries.
 
-Now here's a breakdown of my intentions behind the  Java files, and notes for each, for those that I added in this version. For now, I'll leave the existing classes there for simplicity, mainly because I don't want to delete it all rn just in case.
+## Running it
 
-~ Michael ~
+Open the project folder (the one with `src` and `teams` in it) and run one of these:
 
-## 1 ~ Referee.java
-        This is an entity that could exist on the field who is able to keep track of the game's events.
-        Often times, in sport, rules are maintained by those with the authority to do so. Thus perhaps in a future version of the simulator, corrupt referees may exist, who allow a bit of leniancy to certain teams.
-        Otherwise, they, to me, are an integral part of the sport, as a usually unbiased 3rd party.
-        Placeholder for now.
-        
-## 2 ~ Team.java
-        Teams should exist as a way to actually group the individual players.
-        Teams could also have internal rules, and also players could derive some mechanics and behaviour from their team
-        Teams are also an organisation, where for example, a coach may exist, who doesn't count as a player, but still can have a strong impact on the game.
+- `src/app/Main.java` - watch a single match. Red plays aggressive, Blue plays
+  defensive. Two halves of 2.5 minutes, with a scoreboard and stats at half time
+  and full time.
+- `src/app/BatchMain.java` - no window. Plays 200 matches for each match-up and
+  prints the results. You can pass a different number as an argument, e.g. `400`.
 
-## 3 ~ GameState.java
-        GameState is intended to represent the current state of the Match being played.
-        It generally would contain things like the current MatchPhase, the team's scores, which player/team has the ball, the time elapsed/remaining, etc.
-        Maybe the game PAUSES because a player dies suddenly idk, but GameState is where that is managed.
+## What's going on in a match
 
-## 4 ~ Match.java
-        As opposed to GameState, Match runs the actual match itself, representing One actual game/match/simulation.
-        This is the central hub that can communivate with all sorts of places,, and can be responsible for progressing the active simulation.
-        So when it comes time to create/run a match, we should use this, as it should contain everything we need to do so.
+The players hold their positions in a formation and get pulled towards the ball.
+Whoever is nearest goes to win it back, and the player with the ball dribbles,
+passes when someone gets close, or shoots once they're in range.
 
-## 5 ~ MatchPhase.java
-        MatchPhase is in charge of tracking/managing the current phase/stage of the match.
-        AFter some research, i added a bunch of them to the list, and then added some that i thought could be helpful for the progression of the game. They don't all need to necessarily be used, but it's good that they're there.
-        THe simulation can therefore behave differently, depending on what phase we are currently in. It doesn't really contain any mechanics itself, since it's best kept as an enum that other entities can look at to know what's up.
+Each team has a coach. If their team is losing, the coach pushes everyone further
+up the pitch. If they're winning by two or more, they drop back.
 
-## 6 ~ Ruleset.java
-        This determines the rules that the Match operates under.
-        For now/primarily, there will be one normal ruleset, but if we separate this from Match, we can just have it look here for the rules, which allows us to expand options later on much easier.
-        It also lets us test out longer/shorter simulations, add weird rules if we want, or whatever we please.
+The referee checks for goals and for the ball going out. After a goal, the team
+that conceded kicks off.
 
-## 7 ~ Score.java
-        THis keeps track of the score of a match, and holds the required stuff to update/read it.
-        Rather than each team deciding their own score, Match  holds one Score that records valid goals for both teams.
-        In the future we could add in mechanics, that allow players to change behavior and strategy, depending on the current score and the difference between them.
+Every player keeps track of how far they've run, how long they had the ball, and
+how many passes and shots they made. That's what shows up in the stats box.
 
+## Tactics
 
-## 8 ~ Environment.java
-        This is what we can use to determine different attributes pertaining to the environment that the players will be soccering in.
-        Primarily, it will be a grassy field, but it's good to leave avenues open for adding different terrain, weather, field conditions, etc, to the match to see how it affects the simulations.
-        It's more about the PHYSICAL environment, rather than the boundaries that constrain the game itself.
+Teams are loaded from the files in `teams/presets/`. There are three:
+`aggressive`, `average` and `defensive`. Each file has the six players first,
+then the tactics:
 
-## 9 ~ Goal.java
-        Goal.java is the goal/scoring area within the simulation.
-        It gives us something for the BALL to interact with so that the simulation can determine whether a goal has actually been scored.
-        explicitley is NOT the "GoalEvent.java" which i should really add to this list, which would reflect the actual event of someone Goaling. THis is just to do with the Scoring Zone.
+```
+Goalkeeper,1
+Defender,2
+Defender,3
+Midfielder,4
+Midfielder,5
+Attacker,6
+formationShift=0.10
+pressing=0.15
+shootingRange=2400
+passUnderPressure=300
+```
 
-## 10 ~ PlaySpace.java
-        This determines the bounds that the game can be played within.
-        It can change, depending on the environment, the game, etc. Think of it more as the collectively shared "game space", the invisible wall that surrounds the field, rather than a physical thing.
-        It can be used to determine the size of the field or arena.
-        It doesnt necessarily even need to be a rectangle/normal field. Who knows what the future holds.
+- `formationShift` - how far up (or back) the whole team plays
+- `pressing` - how much players get drawn towards the ball
+- `shootingRange` - how close to goal (in cm) before shooting
+- `passUnderPressure` - how close an opponent gets (in cm) before passing
 
-## 11 ~ GoalEvent.java
-        GoalEvent is in charge of the actual EVENT of a goal being scored.
-        Goal.java is in charge of hte physical scoring area, but if the ball actually enters the zone, then that's up to GoalEvent to manage baybeeeee
-        This is responsible for knowing who score, which player, which team, what time it occured, which goal it was scored in, who last touched/passed the ball (in event of "own goal" as they call it)
-        This is usd by the Match/GameState/Score, maybe even referee, so that Scoring is a bit more than Score += 1; and also gives us a record of what happened.
+If a value is wrong, for example a typo in a name or a value that isn't a number,
+the loader prints an error and the team falls back to balanced tactics.
 
-## 12 ~ Coach.java
-        I allueded to this earlier and thought i should add it too.
-        Coaches are the coaches for each team. THey are not a player, but can still influence the match and the behavioru of their team.
-        IN the future, the could be responsible for team strategy, whether that's aggression, substitutions, etc.
-        This also allows us to have an entity serve as a hub for any decision-making that needs to happen at a higher level than the players, without strictly leaving it up to the nebulous Team.java.
+## Results
 
+These came from running BatchMain with a few hundred matches per match-up:
 
-A lot of these as i say are currently shells and placeholders. I just wanted to really get things into a relateively organised state before working on anything else.
+- Aggressive vs defensive ended up roughly even. The aggressive team only had the
+  ball about 35% of the time but still scored more goals.
+- The average (balanced) team beat both of the other two more often than it lost.
+- average vs average was our check that the simulation is fair. At first one side
+  was winning a lot more, which turned out to be because the same team always
+  moved first every tick. Now the order alternates and teams swap sides between
+  matches, and it comes out even.
 
-Thank you!!
+With small numbers of matches the percentages jump around a lot, so 400 or more
+is better.
 
-~ Michael ~
+## Code layout
+
+```
+src/
+  app/         Main and BatchMain
+  behaviour/   the different ways a player can move
+  entities/    players, ball, team, tactics, coach, referee
+  simulation/  match engine, score, stats, batch runs
+  ui/          drawing the pitch, scoreboard, stats box
+  world/       pitch size, goals, grass
+```
+
+## Design notes
+
+- Strategy: a player's movement is a `MovementBehaviour` that can be swapped
+  during the match. The simple ones are lambdas in `Behaviours`, the ones that
+  need to remember things (like `ReceiveBall`) are classes.
+- Observer: `Match` tells everything registered as a `MatchListener` when there's
+  a goal, half time or full time. The coaches, scoreboard and stats box all
+  listen.
+- Template method: `Player.initialiseDefaultBehaviour()` runs the same steps for
+  every player, and each role fills in `configureDefaultBehaviour()`.
+- `MatchEngine` has all the match logic and doesn't know about the window, so the
+  same code runs in `Main` and in batch mode.
+- `MatchStats.toTeamReport()` is a custom collector that builds a team's stats.
+- `BatchSimulator` runs matches with a parallel stream. Each match creates its own
+  objects and the only shared thing is `Tactics`, which can't be changed, so the
+  threads don't interfere. BatchMain also checks that the parallel results match
+  running them one at a time.
+
+## Limitations
+
+- Possession just means whoever touched the ball last.
+- Every restart is a kick-off from the middle, so no throw-ins, corners or
+  goal kicks.
+- The ball only rolls along the ground.

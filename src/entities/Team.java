@@ -15,8 +15,7 @@ public class Team {
     private Player[] players;
     private Player nominatedChallenger;
     private MovementBehaviour nominatedChallengeBehaviour;
-
-        private final Tactics tactics;
+    private final Tactics tactics;
 
     public Team(String name, Color color, Player[] players) {
         this(name, color, players, Tactics.balanced());
@@ -29,8 +28,11 @@ public class Team {
         this.tactics = tactics;
     }
 
+    // Sequential on purpose. With only 6 players, splitting the work across threads
+    // costs far more than it saves (thread hand-off vs six distance checks).
+    // Parallelism is used where it pays off: whole matches in BatchSimulator.
     public Optional<Player> chooseChallenger(Ball ball) {
-        return Arrays.stream(players).parallel()
+        return Arrays.stream(players)
                 .filter(player -> player != null)
                 .filter(player -> !(player instanceof Goalkeeper))
                 .min(Comparator.comparingDouble(player -> Math.hypot(
@@ -81,7 +83,8 @@ public class Team {
     public Player[] getPlayers() {
         return players;
     }
-     public Tactics getTactics() {
+
+    public Tactics getTactics() {
         return tactics;
     }
 

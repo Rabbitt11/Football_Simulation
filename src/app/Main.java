@@ -19,6 +19,7 @@ import simulation.Ruleset;
 
 import ui.Scoreboard;
 import ui.SimulationPanel;
+import ui.StatsBoard;
 
 import world.GameMap;
 import world.MapPreset;
@@ -35,7 +36,7 @@ public class Main {
         GameMap map = new GameMap(MapPreset.DEFAULT);
         PlaySpace playSpace = map.getPlaySpace();
 
-               // Change these two lines to try different match-ups.
+        // Change these two lines to try different match-ups.
         String redPreset = "teams/presets/aggressive.txt";
         String bluePreset = "teams/presets/defensive.txt";
 
@@ -69,7 +70,10 @@ public class Main {
         Coach blueCoach = new Coach(blueTeam, ball, playSpace.getLength(), false);
         Scoreboard scoreboard = new Scoreboard(match.getGameState(), redCoach, blueCoach);
 
+        StatsBoard statsBoard = new StatsBoard();
+
         match.addListener(scoreboard);
+        match.addListener(statsBoard);
         match.addListener(redCoach);
         match.addListener(blueCoach);
         // A listener can also be a lambda, because MatchListener is a functional interface.
@@ -85,7 +89,8 @@ public class Main {
                     redTeam,
                     blueTeam,
                     ball);
-            panel.setScoreboard(scoreboard);
+            panel.addOverlay(scoreboard);
+            panel.addOverlay(statsBoard);
 
             // Set the preferred size of the panel to 1280x720 pixels due to map scaling issues
             panel.setPreferredSize(new Dimension(1280, 720));
@@ -94,7 +99,7 @@ public class Main {
             frame.pack();
             frame.setVisible(true);
 
-                        // Start first: the coaches set up their preset tactics on kick-off...
+            // Start first: the coaches set up their preset tactics on kick-off...
             match.start();
 
             // ...then the demo gives the ball carrier and challenger their special behaviours.
@@ -179,6 +184,7 @@ public class Main {
             movementTimer.start();
         });
     }
+
     private static Tactics loadTacticsOrDefault(String filename) {
         try {
             return TeamLoader.loadTactics(filename);
@@ -188,7 +194,6 @@ public class Main {
             return Tactics.balanced();
         }
     }
-
 
     private static Player[] loadTeamOrDefault(
             String filename,

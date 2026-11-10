@@ -12,12 +12,13 @@ import simulation.MatchListener;
 import simulation.MatchPhase;
 
 /*
- * Scoreboard - an OBSERVER that draws the score, the clock and goal alerts.
+ * Scoreboard - an OBSERVER of the Match and an OVERLAY on the panel.
+ * Draws the score, the clock, the coaches' mentalities and goal alerts.
  *
  * It reads the score straight from GameState every frame, and uses the
  * onGoal notification only to flash a "GOAL!" banner for a few seconds.
  */
-public class Scoreboard implements MatchListener {
+public class Scoreboard implements MatchListener, Overlay {
 
     private static final long BANNER_MILLIS = 2500;
 
@@ -51,6 +52,7 @@ public class Scoreboard implements MatchListener {
         bannerUntil = Long.MAX_VALUE; // stays on screen
     }
 
+    @Override
     public void draw(Graphics g, int panelWidth, int panelHeight) {
         int seconds = state.getElapsedTime();
         String clock = String.format("%02d:%02d", seconds / 60, seconds % 60);
